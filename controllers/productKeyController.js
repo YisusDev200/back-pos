@@ -50,20 +50,15 @@ exports.validateProductKey = (req, res) => {
     if (!email || !hardware_id || !rfc || !product_key) {
         return res.status(400).json({ status: 0, message: 'Email, hardware ID, RFC, and product key are required' });
     }
-
     db.get("SELECT product_key, expiration_date FROM product_keys WHERE email = ? AND hardware_id = ? AND rfc = ?", [email, hardware_id, rfc], (err, row) => {
         if (err) {
             return res.status(500).json({ status: 0, message: err.toString() });
         }
-
         if (row && row.product_key === product_key) {
-            const currentTimestamp = Math.floor(Date.now() / 1000);
-            
+            const currentTimestamp = Math.floor(Date.now() / 1000);   
             const expirationTimestamp = row.expiration_date;
-
             console.log("Current timestamp: " + currentTimestamp);
             console.log("Expiration timestamp: " + expirationTimestamp);
-
             if (currentTimestamp <= expirationTimestamp) {
                 res.status(200).json({ status: 1, message: 'Product key is valid' });
             } else {
