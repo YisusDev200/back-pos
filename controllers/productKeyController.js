@@ -21,6 +21,7 @@ exports.generateProductKey = (req, res) => {
 
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 30);
+    const expirationTimestamp = Math.floor(expirationDate.getTime() / 1000);
 
     const mailOptions = {
         from: 'digitaleventohub@gmail.com',
@@ -34,7 +35,7 @@ exports.generateProductKey = (req, res) => {
             return res.status(500).json({ status: 0, message: error.toString() });
         }
 
-        db.run("INSERT OR REPLACE INTO product_keys (email, hardware_id, rfc, product_key, expiration_date) VALUES (?, ?, ?, ?, ?)", [email, hardware_id, rfc, productKey, expirationDate.toISOString()], (err) => {
+        db.run("INSERT OR REPLACE INTO product_keys (email, hardware_id, rfc, product_key, expiration_date) VALUES (?, ?, ?, ?, ?)", [email, hardware_id, rfc, productKey, expirationTimestamp], (err) => {
             if (err) {
                 return res.status(500).json({ status: 0, message: err.toString() });
             }
@@ -56,10 +57,14 @@ exports.validateProductKey = (req, res) => {
         }
 
         if (row && row.product_key === product_key) {
-            const currentDate = new Date();
-            const expirationDate = new Date(row.expiration_date);
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            
+            const expirationTimestamp = row.expiration_date;
 
-            if (currentDate <= expirationDate) {
+            console.log("Current timestamp: " + currentTimestamp);
+            console.log("Expiration timestamp: " + expirationTimestamp);
+
+            if (currentTimestamp <= expirationTimestamp) {
                 res.status(200).json({ status: 1, message: 'Product key is valid' });
             } else {
                 res.status(400).json({ status: 0, message: 'Product key has expired' });
